@@ -87,10 +87,14 @@ class TestSummary {
       this.numSkipped += Number(testsuite.$.skipped) || 0;
     }
 
-    if (testsuite.testcase) {
-      for await (const testcase of testsuite.testcase) {
-        await this.handleTestCase(testcase, file);
+    let subtestsuite = testsuite;
+    while (subtestsuite) {
+      if (subtestsuite.testcase) {
+        for await (const testcase of subtestsuite.testcase) {
+          await this.handleTestCase(testcase, file);
+        }
       }
+      subtestsuite = subtestsuite.testsuite;
     }
   }
 
