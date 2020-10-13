@@ -81,6 +81,143 @@ describe("find test location", () => {
       );
     });
   });
+
+  describe("phpunit results", () => {
+    beforeAll(async () => {
+      testReportFile = resolve("target/surefire-reports/TEST-dummy.xml");
+      testCase = {
+        $: {
+          file: "/project-name/test/phpunit/Application/Clients/ClientTest.php",
+          name: "methodTest",
+        },
+      };
+
+      await addFile(
+        "test/phpunit/Application/Clients/ClientTest.php",
+        "<?php\n" +
+          "class ClientTest {\n" +
+          "public function methodTest() { }\n" +
+          "}"
+      );
+
+      await addFile("test/phpunit/Application/Clients/Other/ClientTest.php", "/* empty */");
+    });
+
+    afterAll(clearFiles);
+
+    it("should find path of the class", async () => {
+      let { filePath, line } = await index.findTestLocation(
+        testReportFile,
+        testCase
+      );
+
+      expect(filePath).toBe(resolve("test/phpunit/Application/Clients/ClientTest.php"));
+    });
+
+    it("should find line of the method", async () => {
+      let { filePath, line } = await index.findTestLocation(
+        testReportFile,
+        testCase
+      );
+
+      expect(line).toBe(3);
+    });
+  });
+});
+
+describe('subtestsuites', () => {
+  afterAll(clearFiles);
+  it('should identify subsuites', async () => {
+
+    const filePath = 'TEST-report.xml';
+
+    await addFile(filePath, '<?xml version="1.0" encoding="UTF-8"?>\n' +
+                  '<testsuite name="org.dummy.DummyTest" tests="4" skipped="1" failures="2" errors="1"' +
+                  ' timestamp="2020-07-21T19:20:12" hostname="dummy" time="0.132">\n' +
+                  '  <testsuite name="org.dummy.DummyTest" tests="2" skipped="1" failures="1" errors="0"' +
+                  '   timestamp="2020-07-21T19:20:12" hostname="dummy" time="0.132">\n' +
+                  '    <testcase name="test1" classname="org.dummy.DummyTestTwo" time="0.028"/>\n' +
+                  '    <testcase name="test2" classname="org.dummy.DummyTestTwo" time="0.054">\n' +
+                  '      <failure message="failure_message" type="failure_type">failure_text</failure>\n' +
+                  '    </testcase>\n' +
+                  '  </testsuite>' +
+                  '  <testcase name="test1" classname="org.dummy.DummyTest" time="0.028"/>\n' +
+                  '  <testcase name="test2" classname="org.dummy.DummyTest" time="0.054">\n' +
+                  '    <failure message="failure_message" type="failure_type">failure_text</failure>\n' +
+                  '  </testcase>\n' +
+                  '</testsuite>');
+
+    const testSuites = await index.readTestSuites(resolve(filePath));
+
+    expect(testSuites).toStrictEqual([{
+      $: {
+        name: 'org.dummy.DummyTest',
+        tests: '4',
+        skipped: '1',
+        failures: '2',
+        errors: '1',
+        timestamp: '2020-07-21T19:20:12',
+        hostname: 'dummy',
+        time: '0.132'
+      },
+      testsuite: [{
+        $: {
+          name: 'org.dummy.DummyTest',
+          tests: '2',
+          skipped: '1',
+          failures: '1',
+          errors: '0',
+          timestamp: '2020-07-21T19:20:12',
+          hostname: 'dummy',
+          time: '0.132'
+        },
+        testcase: [{
+          $: {
+            name: 'test1',
+            classname: 'org.dummy.DummyTestTwo',
+            time: '0.028'
+          }
+        },
+        {
+          $: {
+            name: 'test2',
+            classname: 'org.dummy.DummyTestTwo',
+            time: '0.054'
+          },
+          failure: [{
+            $: {
+              message: 'failure_message',
+              type: 'failure_type'
+            },
+            _: 'failure_text'
+          }]
+        }]
+      }],
+      testcase: [
+        {
+          $: {
+            name: 'test1',
+            classname: 'org.dummy.DummyTest',
+            time: '0.028'
+          }
+        },
+        {
+          $: {
+            name: 'test2',
+            classname: 'org.dummy.DummyTest',
+            time: '0.054'
+          },
+          failure: [{
+            $: {
+              message: 'failure_message',
+              type: 'failure_type'
+            },
+            _: 'failure_text'
+          }]
+        }
+      ]
+    }]);
+  });
 });
 
 describe('readTestSuites', () => {
@@ -250,13 +387,22 @@ describe('TestSummary', () => {
 
       const testcase1 = { t1: '' };
       const testcase2 = { t2: '' };
+      const testcase3 = { t3: '' };
+      const testcase4 = { t4: '' };
 
       await testSummary.handleTestSuite({
+        testsuite: [{
+          testsuite: [{
+            testcase: [testcase4]
+          }],
+          testcase: [testcase3]
+        }],
         testcase: [testcase1, testcase2]
       }, 'file');
 
       expect(testSummary.handleTestCase).toHaveBeenCalledWith(testcase1, 'file');
       expect(testSummary.handleTestCase).toHaveBeenCalledWith(testcase2, 'file');
+      expect(testSummary.handleTestCase).toHaveBeenCalledWith(testcase3, 'file');
     });
   });
 

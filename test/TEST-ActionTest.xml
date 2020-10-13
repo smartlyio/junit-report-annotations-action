@@ -2,6 +2,16 @@
 <testsuites>
     <testsuite name="org.dummy.DummyTest" tests="3" failures="1" errors="1"
                timestamp="2020-07-21T19:20:12" hostname="dummy" time="0.132">
+        <testsuite name="org.dummy.DummyTest" tests="3" failures="1" errors="1"
+                   timestamp="2020-07-21T19:20:12" hostname="dummy" time="0.132">
+            <testcase name="test4" classname="org.dummy.DummyTest" time="0.028"/>
+        <testcase
+                name="test2_givenAPrecondition_ThenItShouldDoSomething" classname="org.dummy.DummyTest" time="0.054">
+            <failure
+                    message="java.lang.AssertionError: &#10;Expected not same:&lt;Mock for Object, hashCode: 1210565765&gt;" type="java.lang.AssertionError">java.lang.AssertionError:
+                Expected not same:&lt;Mock for Object, hashCode: 1210565765&gt;
+            </failure>
+        </testsuite>
         <testcase name="test1" classname="org.dummy.DummyTest" time="0.028"/>
         <testcase
                 name="test2_givenAPrecondition_ThenItShouldDoSomething" classname="org.dummy.DummyTest" time="0.054">

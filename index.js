@@ -2,8 +2,10 @@ const core = require("@actions/core");
 const github = require("@actions/github");
 const glob = require("@actions/glob");
 const parser = require("xml2js");
+const { promisify } = require('util');
 const fs = require("fs");
 const path = require("path");
+const stat = promisify(fs.stat);
 
 (async () => {
   try {
@@ -213,6 +215,14 @@ async function readTestSuites(file) {
  * @returns {Promise<{line: number, filePath: string}>} the line and the file of the failing test method.
  */
 async function findTestLocation(testReportFile, testcase) {
+  if (testcase.$.classname) {
+    return await findTestLocationByClass(testReportFile, testcase);
+  } else if (testcase.$.file) {
+    return await findTestLocationByFile(testReportFile, testcase);
+  }
+}
+
+async function findTestLocationByClass(testReportFile, testcase) {
   const klass = testcase.$.classname.replace(/$.*/g, "").replace(/\./g, "/");
 
   // Search in src directories because some files having the same name of the class may have been
@@ -234,22 +244,73 @@ async function findTestLocation(testReportFile, testcase) {
   }
   let line = 0;
   if (bestFilePath !== undefined) {
-    const file = await fs.promises.readFile(bestFilePath, {
-      encoding: "utf-8",
-    });
-    //TODO: make this better won't deal with methods with arguments etc
-    const lines = file.split("\n");
-    for (let i = 0; i < lines.length; i++) {
-      if (lines[i].indexOf(testcase.$.name) >= 0) {
-        line = i + 1; // +1 because the first line is 1 not 0
-        break;
-      }
-    }
+    line = await findTestLineNumber(testReportFile, testcase, bestFilePath);
   } else {
     //fall back so see something
     bestFilePath = `${klass}`;
   }
   return { filePath: bestFilePath, line };
+}
+
+async function findTestLocationByFile(testReportFile, testcase) {
+  let filePath = testcase.$.file;
+  if (path.isAbsolute(filePath)) {
+    let relPath = path.relative(process.cwd(), filePath);
+    if (relPath.match(/^\.\.\//)) {
+      relPath = path.relative('/', filePath);
+    }
+    filePath = relPath;
+  }
+
+  let found = false;
+  let bestFilePath;
+  let bestRelativePathLength = -1;
+  while (!found) {
+    // This is awful. We need to glob to work around the test putting
+    // files in a tmp/ subdirectory
+    const filePathGlob = path.join('**', filePath);
+    const filePaths = await glob.create(filePathGlob, {
+      followSymbolicLinks: false,
+    });
+
+    for await (const candidateFile of filePaths.globGenerator()) {
+      let candidateRelativeLength = path.relative(testReportFile, candidateFile)
+          .length;
+
+      if (!bestFilePath || candidateRelativeLength < bestRelativePathLength) {
+        bestFilePath = candidateFile;
+        bestRelativePathLength = candidateRelativeLength;
+      }
+    }
+
+    if (bestFilePath) {
+      found = true;
+    } else {
+      if (!filePath.match(/\//)) {
+        return { filePath: testcase.$.file, line: 0 };
+      }
+      filePath = filePath.replace(/^.*?\//, "");
+    }
+  }
+
+  const line = await findTestLineNumber(testReportFile, testcase, bestFilePath);
+  return { filePath: bestFilePath, line };
+}
+
+async function findTestLineNumber(testReportFile, testcase, testFilename) {
+  let line = 0;
+  const file = await fs.promises.readFile(testFilename, {
+    encoding: "utf-8",
+  });
+  //TODO: make this better won't deal with methods with arguments etc
+  const lines = file.split("\n");
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].indexOf(testcase.$.name) >= 0) {
+      line = i + 1; // +1 because the first line is 1 not 0
+      break;
+    }
+  }
+  return line;
 }
 
 module.exports.findTestLocation = findTestLocation;
