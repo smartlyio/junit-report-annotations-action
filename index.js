@@ -120,6 +120,7 @@ class TestSummary {
     }
 
     const {filePath, line} = await module.exports.findTestLocation(file, testcase, testsuiteFile);
+    core.info(`Resolved test case to ${filePath}:${line}`);
 
     this.annotations.push({
       path: filePath,
