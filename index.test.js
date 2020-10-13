@@ -108,7 +108,8 @@ describe("find test location", () => {
     it("should find path of the class", async () => {
       let { filePath, line } = await index.findTestLocation(
         testReportFile,
-        testCase
+        testCase,
+        "test/phpunit/Application/Clients/ClientTest.php"
       );
 
       expect(filePath).toBe(resolve("test/phpunit/Application/Clients/ClientTest.php"));
@@ -117,7 +118,8 @@ describe("find test location", () => {
     it("should find line of the method", async () => {
       let { filePath, line } = await index.findTestLocation(
         testReportFile,
-        testCase
+        testCase,
+        "test/phpunit/Application/Clients/ClientTest.php"
       );
 
       expect(line).toBe(3);
@@ -393,6 +395,9 @@ describe('TestSummary', () => {
       await testSummary.handleTestSuite({
         testsuite: [{
           testsuite: [{
+            $: {
+              file: "path"
+            },
             testcase: [testcase4]
           }],
           testcase: [testcase3]
@@ -400,9 +405,10 @@ describe('TestSummary', () => {
         testcase: [testcase1, testcase2]
       }, 'file');
 
-      expect(testSummary.handleTestCase).toHaveBeenCalledWith(testcase1, 'file');
-      expect(testSummary.handleTestCase).toHaveBeenCalledWith(testcase2, 'file');
-      expect(testSummary.handleTestCase).toHaveBeenCalledWith(testcase3, 'file');
+      expect(testSummary.handleTestCase).toHaveBeenCalledWith(testcase1, undefined, 'file');
+      expect(testSummary.handleTestCase).toHaveBeenCalledWith(testcase2, undefined, 'file');
+      expect(testSummary.handleTestCase).toHaveBeenCalledWith(testcase3, undefined, 'file');
+      expect(testSummary.handleTestCase).toHaveBeenCalledWith(testcase4, "path", 'file');
     });
   });
 

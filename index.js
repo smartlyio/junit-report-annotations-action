@@ -100,13 +100,17 @@ class TestSummary {
     }
 
     if (testsuite.testcase) {
+      let testsuiteFile;
+      if (testsuite.$ && testsuite.$.file) {
+        testsuiteFile = testsuite.$.file;
+      }
       for await (const testcase of testsuite.testcase) {
-        await this.handleTestCase(testcase, file);
+        await this.handleTestCase(testcase, testsuiteFile, file);
       }
     }
   }
 
-  async handleTestCase(testcase, file) {
+  async handleTestCase(testcase, testsuiteFile, file) {
     if (!testcase.failure) {
       return;
     }
@@ -115,7 +119,7 @@ class TestSummary {
       return;
     }
 
-    const {filePath, line} = await module.exports.findTestLocation(file, testcase);
+    const {filePath, line} = await module.exports.findTestLocation(file, testcase, testsuiteFile);
 
     this.annotations.push({
       path: filePath,
@@ -214,11 +218,11 @@ async function readTestSuites(file) {
  * @param testcase the JSON test case in the JUnit report
  * @returns {Promise<{line: number, filePath: string}>} the line and the file of the failing test method.
  */
-async function findTestLocation(testReportFile, testcase) {
+async function findTestLocation(testReportFile, testcase, testsuiteFile) {
   if (testcase.$.classname) {
     return await findTestLocationByClass(testReportFile, testcase);
-  } else if (testcase.$.file) {
-    return await findTestLocationByFile(testReportFile, testcase);
+  } else if (testsuiteFile) {
+    return await findTestLocationByFile(testReportFile, testcase, testsuiteFile);
   }
 }
 
@@ -252,8 +256,8 @@ async function findTestLocationByClass(testReportFile, testcase) {
   return { filePath: bestFilePath, line };
 }
 
-async function findTestLocationByFile(testReportFile, testcase) {
-  let filePath = testcase.$.file;
+async function findTestLocationByFile(testReportFile, testcase, testsuiteFile) {
+  let filePath = testsuiteFile;
   if (path.isAbsolute(filePath)) {
     let relPath = path.relative(process.cwd(), filePath);
     if (relPath.match(/^\.\.\//)) {
@@ -287,7 +291,7 @@ async function findTestLocationByFile(testReportFile, testcase) {
       found = true;
     } else {
       if (!filePath.match(/\//)) {
-        return { filePath: testcase.$.file, line: 0 };
+        return { filePath: testsuiteFile, line: 0 };
       }
       filePath = filePath.replace(/^.*?\//, "");
     }
