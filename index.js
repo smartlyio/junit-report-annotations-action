@@ -304,13 +304,14 @@ async function findTestLocationByFile(testReportFile, testcase, testsuiteFile) {
 
 async function findTestLineNumber(testReportFile, testcase, testFilename) {
   let line = 0;
+  const testName = testcase.$.name.match(/^(?<name>\S+)/).groups.name;
   const file = await fs.promises.readFile(testFilename, {
     encoding: "utf-8",
   });
   //TODO: make this better won't deal with methods with arguments etc
   const lines = file.split("\n");
   for (let i = 0; i < lines.length; i++) {
-    if (lines[i].indexOf(testcase.$.name) >= 0) {
+    if (lines[i].indexOf(testName) >= 0) {
       line = i + 1; // +1 because the first line is 1 not 0
       break;
     }

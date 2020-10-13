@@ -88,7 +88,7 @@ describe("find test location", () => {
       testCase = {
         $: {
           file: "/project-name/test/phpunit/Application/Clients/ClientTest.php",
-          name: "methodTest",
+          name: "methodTest [UnitTest]",
         },
       };
 
