@@ -112,7 +112,7 @@ describe("find test location", () => {
         "test/phpunit/Application/Clients/ClientTest.php"
       );
 
-      expect(filePath).toBe(resolve("test/phpunit/Application/Clients/ClientTest.php"));
+      expect(filePath).toBe("tmp/test/phpunit/Application/Clients/ClientTest.php");
     });
 
     it("should find line of the method", async () => {

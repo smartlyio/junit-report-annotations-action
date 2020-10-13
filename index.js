@@ -299,7 +299,7 @@ async function findTestLocationByFile(testReportFile, testcase, testsuiteFile) {
   }
 
   const line = await findTestLineNumber(testReportFile, testcase, bestFilePath);
-  return { filePath: bestFilePath, line };
+  return { filePath: path.relative(process.cwd(), bestFilePath), line };
 }
 
 async function findTestLineNumber(testReportFile, testcase, testFilename) {
