@@ -220,10 +220,10 @@ async function readTestSuites(file) {
  * @returns {Promise<{line: number, filePath: string}>} the line and the file of the failing test method.
  */
 async function findTestLocation(testReportFile, testcase, testsuiteFile) {
-  if (testcase.$.classname) {
-    return await findTestLocationByClass(testReportFile, testcase);
-  } else if (testsuiteFile) {
+  if (!testcase.$.classname) {
     return await findTestLocationByFile(testReportFile, testcase, testsuiteFile);
+  } else {
+    return await findTestLocationByClass(testReportFile, testcase);
   }
 }
 
