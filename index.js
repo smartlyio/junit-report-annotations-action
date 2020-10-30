@@ -105,7 +105,11 @@ class TestSummary {
         testsuiteFile = testsuite.$.file;
       }
       for await (const testcase of testsuite.testcase) {
-        await this.handleTestCase(testcase, testsuiteFile, file);
+        let sourceFile = testsuiteFile;
+        if (!sourceFile && testcase.$.file) {
+          sourceFile = testcase.$.file;
+        }
+        await this.handleTestCase(testcase, sourceFile, file);
       }
     }
   }

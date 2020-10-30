@@ -387,10 +387,10 @@ describe('TestSummary', () => {
     it('should call handle test cases for all', async () => {
       spyOn(testSummary, 'handleTestCase');
 
-      const testcase1 = { t1: '' };
-      const testcase2 = { t2: '' };
-      const testcase3 = { t3: '' };
-      const testcase4 = { t4: '' };
+      const testcase1 = { t1: '', $: { file: 'path.php' } };
+      const testcase2 = { t2: '', $: {} };
+      const testcase3 = { t3: '', $: {} };
+      const testcase4 = { t4: '', $: {} };
 
       await testSummary.handleTestSuite({
         testsuite: [{
@@ -405,7 +405,7 @@ describe('TestSummary', () => {
         testcase: [testcase1, testcase2]
       }, 'file');
 
-      expect(testSummary.handleTestCase).toHaveBeenCalledWith(testcase1, undefined, 'file');
+      expect(testSummary.handleTestCase).toHaveBeenCalledWith(testcase1, 'path.php', 'file');
       expect(testSummary.handleTestCase).toHaveBeenCalledWith(testcase2, undefined, 'file');
       expect(testSummary.handleTestCase).toHaveBeenCalledWith(testcase3, undefined, 'file');
       expect(testSummary.handleTestCase).toHaveBeenCalledWith(testcase4, "path", 'file');
